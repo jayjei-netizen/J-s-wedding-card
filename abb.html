@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>버디버디 청첩장</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Gulim","굴림","Dotum","돋움",sans-serif;font-size:13px;background:#5cb85c url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><circle cx="20" cy="20" r="1.5" fill="%23ffffff55"/></svg>');min-height:100vh;display:flex;justify-content:center;padding:14px 8px 40px}
+  .app{width:100%;max-width:400px}
+  /* 창(window) 공통 */
+  .win{background:#f1faec;border:2px solid #2f8a3b;border-radius:8px 8px 4px 4px;box-shadow:3px 3px 0 #0003;margin-bottom:14px;overflow:hidden}
+  .titlebar{background:linear-gradient(#8be07a,#2f9e3f);color:#fff;font-weight:bold;padding:5px 8px;display:flex;align-items:center;gap:6px;font-size:12px}
+  .titlebar .ico{width:16px;height:16px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff59d,#f9a825);border:1px solid #c77c00}
+  .titlebar .btns{margin-left:auto;display:flex;gap:3px}
+  .titlebar .btns span{width:16px;height:14px;background:#e8f7e0;border:1px solid #fff;border-radius:2px;color:#2f8a3b;font-size:10px;line-height:12px;text-align:center}
+  .titlebar .btns span:last-child{background:#e2553e;color:#fff}
+  .menubar{background:#dff2d6;border-bottom:1px solid #b3dba2;padding:3px 8px;font-size:11px;color:#333;display:flex;gap:12px}
+  .body{padding:12px}
+  /* 로그인 */
+  .logo{text-align:center;padding:16px 0 6px}
+  .logo .bb{font-size:30px;font-weight:900;color:#ffe14d;-webkit-text-stroke:1.5px #2f8a3b;letter-spacing:-1px;font-family:Arial Black,sans-serif}
+  .logo small{display:block;color:#2f8a3b;margin-top:4px}
+  .field{display:flex;align-items:center;gap:6px;margin:6px 20px}
+  .field label{width:52px;font-size:12px;color:#234}
+  .field input{flex:1;border:1px solid #8cc47a;padding:4px;font-family:inherit;background:#fff}
+  .xpbtn{display:block;margin:12px auto 4px;background:linear-gradient(#fff,#d3edc6);border:1px solid #2f8a3b;border-radius:3px;padding:6px 26px;font-family:inherit;font-weight:bold;color:#1e6128;cursor:pointer}
+  .xpbtn:active{background:#d3edc6}
+  .hint{text-align:center;font-size:11px;color:#678;margin-top:6px}
+  /* 버디 리스트 */
+  .me{display:flex;gap:10px;align-items:center;background:#fff;border:1px solid #bfe2b0;padding:8px;border-radius:4px}
+  .avatar{width:48px;height:48px;border:2px solid #86cc6f;border-radius:4px;background:#fff center/cover;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:24px}
+  .status{font-size:11px;color:#2e7d32}
+  .group{margin-top:10px;font-weight:bold;color:#1e6128;font-size:12px}
+  .buddy{display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-radius:3px}
+  .buddy:hover{background:#d8f2cc}
+  .dot{width:9px;height:9px;border-radius:50%;background:#35c24a;box-shadow:0 0 0 1px #1a7a2a}
+  .buddy .msg{color:#888;font-size:11px;margin-left:auto;max-width:55%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* 채팅 */
+  .chat{background:#fff;border:1px solid #bfe2b0;height:auto;padding:10px;line-height:1.7}
+  .line{margin-bottom:6px;opacity:0;transform:translateY(4px);transition:.35s}
+  .line.show{opacity:1;transform:none}
+  .line b.g{color:#1f7f30}.line b.b{color:#d6336c}.line b.s{color:#888}
+  .sys{color:#999;font-size:11px;text-align:center}
+  .typing{color:#999;font-size:11px}
+  /* 섹션 공통 */
+  .card{background:#fff;border:1px solid #bfe2b0;border-radius:4px;padding:12px;text-align:center;line-height:1.8}
+  .card h3{font-size:13px;color:#1e6128;margin-bottom:6px}
+  .big{font-size:16px;font-weight:bold;color:#1e6128}
+  .cal{margin:10px auto 0;border-collapse:collapse;font-size:12px}
+  .cal td,.cal th{width:34px;height:26px;text-align:center}
+  .cal th{color:#1e6128}.cal th:first-child,.cal td:first-child{color:#d6336c}
+  .cal td.on{background:#ffcf1f;border-radius:50%;font-weight:bold;color:#1e6128}
+  .dday{margin-top:8px;color:#d6336c;font-weight:bold}
+  .gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+  .gallery img{width:100%;aspect-ratio:1;object-fit:cover;border:1px solid #bfe2b0;cursor:pointer;background:#e1f1da}
+  .viewer{position:fixed;inset:0;background:#000c;display:none;align-items:center;justify-content:center;z-index:9;padding:20px}
+  .viewer img{max-width:100%;max-height:90vh;border:3px solid #fff}
+  .btnrow{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:8px}
+  .btnrow a,.btnrow button{font-size:12px;padding:5px 10px;text-decoration:none}
+  .acc{text-align:left;border-top:1px dashed #bfe2b0;padding:8px 0;display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:12px}
+  .acc button{font-family:inherit;font-size:11px;padding:3px 8px;background:linear-gradient(#fff,#d3edc6);border:1px solid #2f8a3b;border-radius:3px;cursor:pointer}
+  textarea{width:100%;border:1px solid #8cc47a;font-family:inherit;padding:6px;height:60px;resize:none}
+  .note{background:#fffbe0;border:1px solid #e8d77a;padding:6px 8px;margin-top:6px;text-align:left;font-size:12px}
+  .hidden{display:none}
+  .toast{position:fixed;bottom:20px;right:10px;width:210px;background:#f1faec;border:2px solid #2f8a3b;border-radius:6px;box-shadow:3px 3px 0 #0003;transform:translateY(160%);transition:.4s;z-index:10}
+  .toast.show{transform:none}
+  .toast .body{padding:10px;font-size:12px}
+  .bgm{position:fixed;top:8px;right:8px;z-index:11;width:40px;height:40px;border-radius:50%;border:2px solid #2f8a3b;background:#f1faec;font-size:18px;cursor:pointer;box-shadow:2px 2px 0 #0003}
+  .bgm.on{animation:spin 3s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+  .more{margin-top:8px}
+  .viewer .nav{position:absolute;top:50%;transform:translateY(-50%);background:#fff9;border:none;font-size:26px;width:40px;height:60px;cursor:pointer}
+  .viewer .prev{left:6px}.viewer .next{right:6px}
+  .viewer .cnt{position:absolute;bottom:20px;color:#fff;font-size:13px}
+  .rsvp{text-align:left}.rsvp .row{margin-bottom:8px}.rsvp .row>b{display:block;font-size:12px;color:#1e6128;margin-bottom:3px}
+  .rsvp input[type=text],.rsvp input[type=number],.rsvp select{width:100%;border:1px solid #8cc47a;padding:5px;font-family:inherit;background:#fff}
+  .seg{display:flex;gap:4px}.seg label{flex:1;text-align:center;border:1px solid #8cc47a;padding:5px;border-radius:3px;cursor:pointer;background:#fff}
+  .seg input{display:none}.seg input:checked+span{font-weight:bold;color:#1e6128}.seg label:has(input:checked){background:#d3edc6}
+  .kakao{background:#fee500 !important;border-color:#c9b400 !important;color:#3c1e1e !important}
+
+/* ===== 버디버디 7.0 라임 테마 ===== */
+body{background:linear-gradient(#bfe6ff,#e9f7d6 60%,#c9ea8c);font-family:"Dotum","돋움","Gulim",sans-serif}
+.win{border:1px solid #6f9b2a;border-radius:10px 10px 6px 6px;background:linear-gradient(#d7ef8e,#b6db4f);padding:0 5px 5px;box-shadow:0 4px 12px #4a6a1a55}
+.win>.body{background:#fff;border:1px solid #93b848;border-radius:4px}
+.titlebar,.titlebar.lt{background:none;color:#2d4a06;padding:6px 3px;font-size:13px}
+.titlebar .ico{width:18px;height:18px;background:radial-gradient(circle at 35% 30%,#fff,#b7e24a 45%,#5f9d12);border:1px solid #4d7f0e}
+.titlebar .btns span,.rbtns i{width:17px;height:17px;border-radius:50%;background:radial-gradient(circle at 40% 30%,#fff,#dde7c8);border:1px solid #7d9a4a;color:#4b5b33;font-style:normal;font-size:11px;line-height:15px;text-align:center;font-weight:bold}
+.titlebar .btns span:last-child{background:radial-gradient(circle at 40% 30%,#fff,#dde7c8);color:#4b5b33}
+.rbtns{margin-left:auto;display:flex;gap:3px}
+.tlogo{font-size:15px;filter:hue-rotate(40deg)}.tbrand{font-family:Arial Black,sans-serif;letter-spacing:.5px}
+.menubar,.lm{background:none;border:0;color:#2d3a14;font-size:12.5px;padding:2px 6px 6px;gap:14px}
+.card{border-color:#c4df8a}.card h3,.big,.group,.cal th{color:#3d6b0c}
+.cal td.on{background:#8fce2a;color:#fff}
+.xpbtn{background:linear-gradient(#fdfff4,#d8ee9e);border-color:#7fa83a;color:#35560a;border-radius:12px}
+.chat{border-color:#c4df8a}.line b.g{color:#2d7d14}.line b.b{color:#e0457b}
+/* 로그인 */
+#loginWin{padding-bottom:0}
+.scene{position:relative;height:410px;overflow:hidden;border:1px solid #93b848;border-radius:4px 4px 0 0;background:linear-gradient(#5fb4ec 0%,#9fd6f6 35%,#e3f5fb 58%)}
+.cloud{position:absolute;background:#fff;border-radius:40px;filter:drop-shadow(0 2px 2px #7ab3d655)}
+.cloud:before,.cloud:after{content:"";position:absolute;background:#fff;border-radius:50%}
+.c1{left:18%;top:26px;width:90px;height:28px}.c1:before{width:44px;height:44px;left:14px;top:-20px}.c1:after{width:34px;height:34px;left:44px;top:-12px}
+.c2{left:62%;top:42px;width:62px;height:20px}.c2:before{width:30px;height:30px;left:12px;top:-14px}
+.c3{left:-14px;top:112px;width:60px;height:22px}.c3:before{width:30px;height:30px;left:16px;top:-14px}
+.c4{left:70%;top:120px;width:100px;height:30px}.c4:before{width:50px;height:50px;left:20px;top:-24px}.c4:after{width:36px;height:36px;left:54px;top:-14px}
+.rainbow{position:absolute;left:-150px;top:150px;width:360px;height:360px;border-radius:50%;opacity:.55;background:radial-gradient(circle,transparent 57%,#c49cff 57%,#8fb6ff 60%,#8ce39a 63%,#fff27a 66%,#ffba6e 69%,#ff8f8f 72%,transparent 73%)}
+.shoe{position:absolute;left:24px;top:95px;width:165px;filter:drop-shadow(2px 4px 3px #0003);transform:rotate(-8deg);animation:fly 3s ease-in-out infinite}
+@keyframes fly{50%{transform:rotate(-8deg) translateY(-8px)}}
+.brand{position:absolute;left:170px;top:105px;line-height:.9}
+.brand .b1{display:block;font:italic 900 36px Arial Rounded MT Bold,Arial,sans-serif;color:#fff;-webkit-text-stroke:1.2px #6aa9d8;padding-left:18px}
+.brand .b2{display:block;font:italic 900 46px Arial Black,Arial,sans-serif;color:#fff;-webkit-text-stroke:1.5px #6aa9d8;text-shadow:2px 3px 0 #9fcdea}
+.brand .ver{display:block;font:bold 11px Arial;color:#4d86b8;margin-top:6px;letter-spacing:1px}
+.hill{position:absolute;border-radius:50% 50% 0 0}
+.h1{left:-20%;right:-10%;top:250px;height:260px;background:linear-gradient(#d6ef7a,#9fcf3c)}
+.h2{left:30%;right:-40%;top:228px;height:260px;background:linear-gradient(#e4f59b,#b3dc4f);border-radius:60% 40% 0 0}
+.path{position:absolute;left:52%;top:250px;width:150px;height:120px;border:12px solid #fbfbe8;border-color:#fbfbe8 transparent transparent transparent;border-radius:50%;transform:rotate(-18deg);opacity:.9}
+.tree{position:absolute;width:34px;height:34px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#c6ec6a,#5da21b)}
+.tree:after{content:"";position:absolute;left:15px;top:30px;width:4px;height:14px;background:#8a6a3a}
+.t1{left:30%;top:262px;width:28px;height:28px}.t2{left:52%;top:246px;width:34px;height:34px}.t3{left:74%;top:240px;width:30px;height:30px}.t4{left:90%;top:236px;width:22px;height:22px}
+.daisy{position:absolute;border-radius:50%;background:radial-gradient(circle,#ffc62a 22%,#fff 24%,#fff 58%,transparent 62%),conic-gradient(from 0deg,#fff 0 10%,#f1f4ff 10% 20%,#fff 20% 30%,#f1f4ff 30% 40%,#fff 40% 50%,#f1f4ff 50% 60%,#fff 60% 70%,#f1f4ff 70% 80%,#fff 80% 90%,#f1f4ff 90%);-webkit-mask:radial-gradient(circle,#000 62%,transparent 64%);filter:drop-shadow(0 1px 1px #5a7a2a66)}
+.daisy:nth-child(3n){background:radial-gradient(circle,#ffc62a 22%,#ffd9ec 24%,#ffd9ec 58%,transparent 62%)}
+.loginbox{background:linear-gradient(#f3fbcf,#dcef95);border:1px solid #93b848;border-top:0;border-radius:0 0 4px 4px;padding:14px 12px 0;margin-bottom:5px}
+.lrow{display:flex;gap:8px;align-items:center}.fields{flex:1}
+.lf{display:flex;align-items:center;gap:8px;margin-bottom:8px}.lf label{width:62px;font-size:13px;color:#2e3b12}
+.pill{flex:1;display:flex;align-items:center;background:#fff;border:1px solid #a9c46a;border-radius:14px;padding:4px 10px;box-shadow:inset 0 1px 2px #0001}
+.pill input{border:0;outline:0;width:100%;font-family:inherit;background:none}.caret{color:#d4a21a;font-size:10px}
+.keybtn{width:92px;height:68px;border-radius:8px;border:1px solid #9cb65a;background:linear-gradient(#fffff4,#e4f2b4);font:bold 14px inherit;color:#2e3b12;cursor:pointer;box-shadow:0 2px 3px #0002}
+.keybtn:active{transform:translateY(1px)}
+.chk{display:flex;gap:10px;justify-content:center;font-size:13px;margin:4px 0;color:#2e3b12}.chk input{vertical-align:-2px}
+.lfoot{display:flex;justify-content:space-between;border-top:1px solid #b7d06a;margin:10px -12px 0;padding:6px 10px;font-size:12px;background:#fff}
+/* 버디리스트 */
+.prof{display:flex;align-items:center;gap:8px;background:linear-gradient(#fff,#f3f9e2);border:1px solid #93b848;border-radius:6px 6px 0 0;padding:8px}
+.pavatar{width:58px;height:58px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px #9ab45a,0 2px 4px #0003;background:#fff center/cover;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0}
+.pinfo{flex:1;min-width:0}.pnick{font-size:14px}.emo{margin-right:3px}.pmsg{font-size:12px;color:#333;margin-top:3px}
+.picons{display:flex;gap:2px;border:1px solid #b9cf82;border-radius:14px;padding:3px 6px;background:#fff}.picons span{font-size:15px}
+.toolbar{display:flex;justify-content:space-around;background:linear-gradient(#fbfff0,#e6f3c1);border:1px solid #93b848;border-top:0;padding:6px 2px;font-size:12px;border-radius:14px;margin:4px 0}
+.blwrap{display:flex;background:#fff;border:1px solid #93b848;height:250px}
+.tabs{width:64px;background:#fff;border-right:1px solid #93b848}
+.tab{height:25%;text-align:center;font-size:11px;padding-top:10px;background:linear-gradient(90deg,#c8e56c,#a9d23e);border-bottom:1px solid #8bb035;color:#233}
+.tab.on{background:#fff}.tab{font-size:20px;line-height:1.2}.tab small{font-size:11px}.tab br+*{}
+.blist{flex:1;padding:6px 8px;overflow:auto;font-size:13px;background:#fff url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="120"><text x="90" y="100" font-size="90" opacity=".07">👟</text></svg>') right bottom no-repeat}
+.grp{font-weight:bold;margin:4px 0}.play{display:inline-block;width:16px;height:16px;border-radius:50%;background:#7cc22a;color:#fff;font-size:8px;text-align:center;line-height:16px}
+.bud{display:flex;align-items:center;gap:5px;padding:3px 2px;cursor:pointer;white-space:nowrap}
+.bud:hover{background:#eef8d6}.bud em{font-style:normal;color:#2f6fe0;overflow:hidden;text-overflow:ellipsis;font-size:12px}.hp{margin-left:auto}
+.face{filter:grayscale(1)}.face.on{filter:none}
+.par{font-size:11px;color:#667;padding:0 0 4px 24px}
+.fold{padding:3px 2px 3px 18px;color:#222}
+.dock{display:flex;justify-content:space-around;background:linear-gradient(#f3fbd8,#d7ee8f);border:1px solid #93b848;border-top:0;padding:8px 2px;border-radius:0 0 4px 4px}
+.dock div{text-align:center;font-size:10.5px;cursor:pointer;color:#233}
+.dock i{display:flex;width:42px;height:42px;margin:0 auto 3px;border-radius:50%;background:radial-gradient(circle at 40% 30%,#fff,#e9edd9);border:1px solid #a8b98a;align-items:center;justify-content:center;font-style:normal;font-size:20px;box-shadow:0 2px 3px #0002}
+.bgm{border-color:#6f9b2a;background:radial-gradient(circle at 40% 30%,#fff,#cfe98a)}
+.toast{border-color:#6f9b2a;background:linear-gradient(#d7ef8e,#b6db4f)}.toast .body{background:#fff;margin:0 4px 4px;border-radius:4px}
+.acc button{background:linear-gradient(#fff,#d8ee9e);border-color:#7fa83a}
+
+/* ===== 친구 정보(축하 쪽지) ===== */
+.tlink{margin-left:auto;font-weight:normal;font-size:12px;color:#2d4a06}
+.finfo{display:flex;gap:6px;background:#f6fbe8;border:1px solid #93b848;border-radius:4px;padding:8px}
+.fleft{flex:1;min-width:0}
+.frow{display:flex;align-items:center;gap:3px;margin-bottom:5px;flex:1;min-width:0}
+.frow label{font-size:12px;white-space:nowrap;color:#2d3a14}
+.frow input,.frow select{flex:1;min-width:0;border:1px solid #a9c46a;padding:3px 4px;font:12px inherit;background:#fff}
+.frow2{display:flex;gap:6px;flex-wrap:wrap}.frow2>.frow:first-child{flex:1 1 100%}.frow2>.frow:last-child{flex:1 1 100%}
+.fintro{display:flex;justify-content:space-between;font-size:12px;margin:6px 0 3px}.fintro u{color:#2f8a3b;cursor:pointer}
+.finfo textarea{height:118px;border:1px solid #a9c46a;font-size:12.5px;line-height:1.6}
+.fright{width:128px;display:flex;flex-direction:column}
+.stage{flex:1;background:linear-gradient(#fff,#f3f9e6);border:1px solid #a9c46a;padding:6px 0;display:flex;align-items:center}
+.shopbtn{margin-top:4px;text-align:center;font-size:11.5px;border:1px solid #93b848;background:linear-gradient(#fff,#e2f1b4);padding:4px;cursor:pointer;border-radius:2px}
+.closet{background:#fff;border:1px solid #93b848;border-radius:4px;margin-top:5px;padding:6px}
+.ctabs{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:6px}
+.ctabs span{font-size:11.5px;padding:3px 8px;border:1px solid #a9c46a;border-radius:10px;cursor:pointer;background:#f3f9e2}
+.ctabs span.on{background:#7cc22a;color:#fff;border-color:#5c9a17;font-weight:bold}
+.citems{display:grid;grid-template-columns:repeat(auto-fill,minmax(62px,1fr));gap:4px}
+.citem{border:1px solid #d5e7b0;border-radius:4px;padding:3px;text-align:center;cursor:pointer;background:#fcfff5}
+.citem small{display:block;font-size:10.5px;margin-top:2px}.citem.on{border:2px solid #5c9a17;background:#eaf7cf}
+.cbtm{display:flex;gap:4px;justify-content:flex-end;margin-top:6px}
+.cbtm button,.fbtns button{font:12px inherit;padding:4px 8px;border:1px solid #93b848;background:linear-gradient(#fff,#e2f1b4);border-radius:2px;cursor:pointer}
+.fbtns{display:flex;gap:4px;padding-top:5px}.fbtns button:last-child{margin-left:auto}
+.ncard{display:flex;gap:8px;border:1px solid #c4df8a;border-radius:4px;padding:6px;margin-bottom:6px;background:#fbfff2}
+.nav{width:66px;flex-shrink:0;background:#fff;border:1px solid #d5e7b0}
+.nbody{flex:1;min-width:0;font-size:12.5px}.nhead span{color:#888;font-size:11px}
+.nmeta{font-size:11px;color:#2f8a3b;margin:2px 0 4px}.nmsg{line-height:1.6;word-break:break-all}
+.bgm{width:32px !important;height:32px !important;font-size:14px !important;opacity:.9}
+.toast{bottom:auto !important;top:48px;right:8px}
+.toast{transform:translateX(130%)}.toast.show{transform:none}
+.app{padding-bottom:30px}
+.win .titlebar{padding-right:42px}
+#main>.win:first-child .titlebar, #loginWin .titlebar{padding-right:3px}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ① 로그인 창 (버디버디 7.0 스타일) -->
+  <div class="win lime" id="loginWin">
+    <div class="titlebar lt"><span class="tlogo">👟</span><b class="tbrand">BUDDYBUDDY</b><div class="rbtns"><i>–</i><i>×</i></div></div>
+    <div class="scene">
+      <div class="cloud c1"></div><div class="cloud c2"></div><div class="cloud c3"></div><div class="cloud c4"></div>
+      <div class="rainbow"></div>
+      <svg class="shoe" viewBox="0 0 200 140">
+        <defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c8f06a"/><stop offset="1" stop-color="#5fae1c"/></linearGradient></defs>
+        <g fill="#fff" stroke="#b9cfe0" stroke-width="2">
+          <path d="M112 50 C120 10 165 0 196 12 C178 18 186 26 170 30 C184 34 176 42 160 44 C170 50 150 56 130 60Z"/>
+          <path d="M60 40 C40 20 30 22 22 8 C44 12 52 20 58 18 C54 28 66 32 74 36Z"/></g>
+        <ellipse cx="85" cy="28" rx="30" ry="8" fill="none" stroke="#fff" stroke-width="5"/>
+        <path d="M40 55 L118 50 C124 80 150 88 172 96 C184 100 184 118 170 120 L28 120 C18 120 16 108 22 96 C28 84 34 72 40 55Z" fill="url(#sg)" stroke="#3f7d10" stroke-width="3"/>
+        <path d="M18 112 L176 112 L172 124 L22 124Z" fill="#c98a3a" stroke="#7a4f1a" stroke-width="2"/>
+        <g stroke="#3f7d10" stroke-width="3"><line x1="70" y1="62" x2="100" y2="58"/><line x1="72" y1="72" x2="104" y2="68"/><line x1="76" y1="82" x2="108" y2="78"/></g>
+      </svg>
+      <div class="brand"><span class="b1">buddy</span><span class="b2">BUDDY</span><span class="ver">WEDDING EDITION</span></div>
+      <div class="hill h1"></div><div class="hill h2"></div><div class="path"></div>
+      <div class="tree t1"></div><div class="tree t2"></div><div class="tree t3"></div><div class="tree t4"></div>
+      <div id="daisies"></div>
+    </div>
+    <div class="loginbox">
+      <div class="lrow"><div class="fields">
+        <div class="lf"><label>이용자 ID</label><div class="pill"><input id="loginId" readonly><span class="caret">▼</span></div></div>
+        <div class="lf"><label>비밀번호</label><div class="pill"><input type="password" value="********" readonly></div></div>
+      </div><button class="keybtn" onclick="login()">🔑 로그인</button></div>
+      <div class="chk"><label><input type="checkbox" checked> 하객 몰래 입장</label></div>
+      <div class="chk"><label style="color:#9aa"><input type="checkbox" disabled> 자동 로그인</label><label><input type="checkbox"> 비밀번호 저장</label></div>
+      <div class="lfoot"><span>▸ <span id="loginSub"></span></span><span>▸ 청첩장 열기</span></div>
+    </div>
+  </div>
+
+  <div id="main" class="hidden">
+    <!-- ② 버디 리스트 -->
+    <div class="win lime">
+      <div class="titlebar lt"><span class="tlogo">👟</span><b class="tbrand">버디버디</b><div class="rbtns"><i>–</i><i>□</i><i>×</i></div></div>
+      <div class="menubar lm"><span>파일(<u>F</u>)</span><span>친구(<u>B</u>)</span><span>기능(<u>A</u>)</span><span>도구(<u>T</u>)</span><span>도움말(<u>H</u>)</span></div>
+      <div class="prof">
+        <div class="pavatar" id="coupleAvatar">💑</div>
+        <div class="pinfo"><div class="pnick"><span class="emo">😌</span><b id="meName"></b></div>
+          <div class="pmsg"><span id="meStatus"></span> · <span id="ddayMini"></span></div></div>
+        <div class="picons"><span>🏠</span><span>📨</span><span>🧑</span><span>📱</span></div>
+      </div>
+      <div class="toolbar"><span>📟 문자⁺</span><span>☎ 버디폰</span><span>💬 채팅</span><span>🎵 뮤직</span></div>
+      <div class="blwrap">
+        <div class="tabs"><div class="tab on">😊<br><small>Buddy</small></div><div class="tab">🏠<br><small>Hompy</small></div><div class="tab">🎬<br><small>Action</small></div><div class="tab">🎮<br><small>Game</small></div></div>
+        <div class="blist">
+          <div class="grp"><span class="play">▶</span> 결혼합니다 (2/2) 👫</div>
+          <div id="buddyList"></div>
+          <div class="grp"><span class="play">▶</span> 소중한 하객 (1/∞)</div>
+          <div class="bud"><span class="face">🙂</span>바로 당신☆ <em>(초대장이 도착했어요~♥)</em><span class="hp">🏠</span></div>
+          <div class="fold">📁 가족친지 (0/∞)</div><div class="fold">📁 ♥친구들♥ (0/∞)</div><div class="fold">📁 직장동료 (0/∞)</div>
+        </div>
+      </div>
+      <div class="dock"><div><i style="background:#e8403a;color:#fff">♥</i>청첩장</div><div><i>📷</i>사진첩</div><div><i>🗺</i>오시는길</div><div><i>✅</i>참석여부</div><div><i>💌</i>축하쪽지</div></div>
+    </div>
+
+    <!-- ③ 대화창 (인사말) -->
+    <div class="win">
+      <div class="titlebar"><div class="ico"></div><span id="chatTitle"></span><div class="btns"><span>_</span><span>□</span><span>×</span></div></div>
+      <div class="body"><div class="chat" id="chat"></div></div>
+    </div>
+
+    <!-- ④ 일시 -->
+    <div class="win">
+      <div class="titlebar"><div class="ico"></div>📅 약속 알림<div class="btns"><span>_</span><span>□</span><span>×</span></div></div>
+      <div class="body"><div class="card">
+        <div class="big" id="dateText"></div><div id="hallName"></div>
+        <table class="cal" id="cal"></table><div class="dday" id="dday"></div>
+      </div></div>
+    </div>
+
+    <!-- ⑤ 갤러리 -->
+    <div class="win">
+      <div class="titlebar"><div class="ico"></div>🖼 미니홈피 사진첩<div class="btns"><span>_</span><span>□</span><span>×</span></div></div>
+      <div class="body"><div class="gallery" id="gallery"></div>
+        <button class="xpbtn more" id="moreBtn" onclick="showMore()">사진 더보기 ▼</button></div>
+    </div>
+
+    <!-- ⑥ 오시는 길 -->
+    <div class="win">
+      <div class="titlebar"><div class="ico"></div>🗺 오시는 길<div class="btns"><span>_</span><span>□</span><span>×</span></div></div>
+      <div class="body"><div class="card">
+        <h3 id="placeName"></h3><div id="placeAddr"></div>
+        <div class="btnrow" id="mapBtns"></div>
+        <div id="transport" style="text-align:left;margin-top:10px;font-size:12px"></div>
+      </div></div>
+    </div>
+
+    <!-- ⑦ 계좌 -->
+    <div class="win">
+      <div class="titlebar"><div class="ico"></div>💌 마음 전하실 곳<div class="btns"><span>_</span><span>□</span><span>×</span></div></div>
+      <div class="body"><div class="card" id="accounts"></div></div>
+    </div>
+
+    <!-- ⑧ 참석 여부 (RSVP) -->
+    <div class="win">
+      <div class="titlebar"><div class="ico"></div>✅ 참석 여부 알려주기<div class="btns"><span>_</span><span>□</span><span>×</span></div></div>
+      <div class="body"><div class="card rsvp">
+        <div style="text-align:center;font-size:12px;margin-bottom:10px">원활한 예식 준비를 위해<br>참석 여부를 알려주시면 감사하겠습니다 🙏</div>
+        <div class="row"><b>어느 쪽 하객이신가요?</b><div class="seg">
+          <label><input type="radio" name="side" value="신랑측" checked><span>🤵 신랑측</span></label>
+          <label><input type="radio" name="side" value="신부측"><span>👰 신부측</span></label></div></div>
+        <div class="row"><b>참석 여부</b><div class="seg">
+          <label><input type="radio" name="attend" value="참석" checked><span>참석할게요</span></label>
+          <label><input type="radio" name="attend" value="불참"><span>마음만 보낼게요</span></label></div></div>
+        <div class="row"><b>성함</b><input type="text" id="rName" placeholder="이름을 입력해주세요"></div>
+        <div class="row"><b>연락처 (선택)</b><input type="text" id="rPhone" placeholder="010-0000-0000"></div>
+        <div class="row"><b>참석 인원 (본인 포함)</b><input type="number" id="rCount" min="1" value="1"></div>
+        <div class="row"><b>식사 여부</b><select id="rMeal"><option>식사 예정</option><option>식사 안 함</option><option>미정</option></select></div>
+        <div class="row"><b>전하실 말씀 (선택)</b><input type="text" id="rMemo"></div>
+        <button class="xpbtn" id="rBtn" onclick="sendRsvp()">참석 여부 전달하기</button>
+      </div></div>
+    </div>
+
+    <!-- ⑨ 공유 -->
+    <div class="win">
+      <div class="titlebar"><div class="ico"></div>📢 버디들에게 알리기<div class="btns"><span>_</span><span>□</span><span>×</span></div></div>
+      <div class="body"><div class="card"><div class="btnrow" style="margin:0">
+        <button class="xpbtn kakao" style="margin:0" onclick="shareKakao()">💬 카카오톡 공유</button>
+        <button class="xpbtn" style="margin:0" onclick="copy(C.share.url||location.href)">🔗 링크 복사</button>
+      </div></div></div>
+    </div>
+
+    <!-- ⑩ 축하 쪽지 (친구 정보 스타일) -->
+    <div class="win" id="noteWin">
+      <div class="titlebar"><div class="ico"></div>친구 정보 · 축하 쪽지<span class="tlink">쪽지 | 대화</span></div>
+      <div class="finfo">
+        <div class="fleft">
+          <div class="frow"><label>∘ 아이디:</label><input id="gName" placeholder="이름 (필수)"></div>
+          <div class="frow"><label>∘ 닉네임:</label><input id="gNick" placeholder="=*열혈하객*="></div>
+          <div class="frow2">
+            <div class="frow"><label>∘ 관계:</label><select id="gSide"><option>신랑 친구</option><option>신부 친구</option><option>가족·친지</option><option>직장 동료</option><option>기타</option></select></div>
+            <div class="frow"><label>∘ 지역:</label><input id="gRegion" placeholder="서울"></div>
+          </div>
+          <div class="fintro"><span>∘ 자기소개 (축하 메시지):</span><u>상세 프로필 보기</u></div>
+          <textarea id="gMsg" placeholder="【No.1 축하전설…】&#10;&quot;결혼 진심으로 축하해~!!&quot;&#10;행복하게 잘 살아야 돼 ♥"></textarea>
+        </div>
+        <div class="fright">
+          <div class="stage" id="avatarStage"></div>
+          <div class="shopbtn" onclick="document.getElementById('closet').classList.toggle('hidden')">친구의상구매 👕</div>
+        </div>
+      </div>
+      <div class="closet hidden" id="closet">
+        <div class="ctabs" id="ctabs"></div>
+        <div class="citems" id="citems"></div>
+        <div class="cbtm"><button onclick="randomOutfit()">🎲 랜덤 코디</button><button onclick="resetOutfit()">↺ 초기화</button></div>
+      </div>
+      <div class="fbtns"><button onclick="sendNote()">친구추가(등록)</button><button onclick="document.getElementById('closet').classList.toggle('hidden')">옷장열기</button><button onclick="gunghap()">궁합운세</button><button onclick="resetForm()">닫기</button></div>
+    </div>
+
+    <!-- ⑪ 도착한 쪽지 목록 -->
+    <div class="win">
+      <div class="titlebar"><div class="ico"></div>📬 도착한 축하 쪽지 <span class="tlink" id="noteCnt"></span></div>
+      <div class="body"><div id="notes"></div><div class="hint">※ 현재 쪽지는 이 기기 브라우저에만 저장됩니다</div></div>
+    </div>
+
+    <div style="text-align:center;color:#fff;font-size:11px;margin-top:10px" id="footer"></div>
+  </div>
+</div>
+
+<div class="viewer" id="viewer" onclick="closeView(event)">
+  <button class="nav prev" onclick="step(-1)">‹</button><img id="viewerImg"><button class="nav next" onclick="step(1)">›</button>
+  <div class="cnt" id="vcnt"></div></div>
+<button class="bgm hidden" id="bgmBtn" onclick="toggleBgm()">🎵</button>
+<audio id="bgm" loop preload="auto"></audio>
+<script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js" crossorigin="anonymous"></script>
+<div class="toast" id="toast"><div class="titlebar"><div class="ico"></div>버디버디 알림</div><div class="body" id="toastText"></div></div>
+<audio id="sfx" preload="auto"></audio>
+
+<script>
+/* =========================================================
+   ✏️ 여기만 수정하면 됩니다 (CONFIG)
+   ========================================================= */
+const CONFIG = {
+  groom: { name: "김신랑", nick: "☆신랑★", status: "드디어 장가갑니다", father: "김아버지", mother: "이어머니", order: "장남", phone: "010-0000-0000" },
+  bride: { name: "이신부", nick: "♡신부♡", status: "우리 결혼해요~♥", father: "이아버지", mother: "박어머니", order: "장녀", phone: "010-0000-0000" },
+
+  loginId: "wedding_2026",          // 로그인 창 아이디
+  coupleStatus: "결혼 준비 중",      // 버디리스트 상태
+  coupleAvatar: "",                 // 커플 사진 URL (비우면 💑 이모지)
+
+  // 예식 일시 (YYYY-MM-DDTHH:MM)
+  datetime: "2026-11-21T12:30",
+
+  place: {
+    name: "○○웨딩홀 3층 그랜드홀",
+    address: "서울특별시 ○○구 ○○로 123",
+    naverMap: "https://map.naver.com/",
+    kakaoMap: "https://map.kakao.com/",
+    tmap: "https://tmap.life/",
+    transport: [
+      ["🚇 지하철", "○호선 ○○역 3번 출구 도보 5분"],
+      ["🚌 버스", "간선 000, 지선 0000 ○○정류장 하차"],
+      ["🚗 주차", "건물 지하주차장 2시간 무료"]
+    ]
+  },
+
+  // 대화창 인사말 (who: "g"=신랑, "b"=신부, "s"=시스템 문구)
+  chat: [
+    { who: "s", text: "☆신랑★ 님이 대화에 참여했습니다." },
+    { who: "s", text: "♡신부♡ 님이 대화에 참여했습니다." },
+    { who: "g", text: "안녕하세요~ 오랜만에 버디버디 켰어요 ㅎㅎ" },
+    { who: "b", text: "저희 드디어 결혼합니다!! ♥" },
+    { who: "g", text: "서로 버디 추가한 지 어느덧 ○년," },
+    { who: "b", text: "이제 평생 버디가 되기로 약속했어요." },
+    { who: "g", text: "귀한 걸음 하시어 축복해 주시면" },
+    { who: "b", text: "더없는 기쁨으로 간직하겠습니다 ^^*" }
+  ],
+
+  // 📷 갤러리 — 방법 A: photos 폴더에 01.jpg ~ 40.jpg 로 넣으면 자동으로 불러옴
+  gallery: {
+    folder: "photos/",   // 사진 폴더
+    count: 40,           // 사진 장수
+    ext: "jpg",          // 확장자 (jpg / png / webp)
+    firstShow: 9,        // 처음에 보여줄 장수 (나머지는 '더보기')
+    demo: true           // ⚠️ 내 사진 넣은 뒤 false 로 바꾸세요 (true면 예시 이미지)
+  },
+  // 방법 B: 파일명이 제각각이면 여기에 직접 나열 (값이 있으면 방법 A보다 우선)
+  photos: [],
+
+  // 🎵 배경음악 (mp3 파일 경로 또는 URL, 비우면 버튼 숨김)
+  bgm: "music.mp3",
+
+  // ✅ 참석 여부 + 💌 축하 쪽지 — Google Apps Script 웹앱 URL
+  //    하나의 URL로 둘 다 저장됩니다. 비우면 쪽지는 이 기기에만 저장, 참석은 테스트 모드
+  rsvpUrl: "",
+
+  // 💬 카카오톡 공유
+  share: {
+    kakaoKey: "",        // 카카오 개발자 JavaScript 키
+    url: "",             // 청첩장 배포 주소 (예: https://내아이디.github.io/wedding/)
+    title: "김신랑 ♥ 이신부 결혼합니다",
+    desc: "2026년 11월 21일 토요일 오후 12시 30분\n○○웨딩홀 3층 그랜드홀",
+    image: ""            // 썸네일 이미지 전체 URL (https://...)
+  },
+
+  accounts: {
+    groom: [["신랑 김신랑", "○○은행 000-0000-0000"], ["아버지 김아버지", "○○은행 000-0000-0000"]],
+    bride: [["신부 이신부", "○○은행 000-0000-0000"], ["어머니 박어머니", "○○은행 000-0000-0000"]]
+  },
+
+  toast: "♡신부♡ 님이 로그인했습니다.",  // 로그인 후 알림창
+  footer: "Copyright ⓒ 2026 ○○ & ○○ All rights reserved.",
+  sound: ""   // 로그인 효과음 mp3 URL (선택)
+};
+/* ========================================================= */
+
+const $ = id => document.getElementById(id);
+const C = CONFIG, D = new Date(C.datetime);
+const days = ["일","월","화","수","목","금","토"];
+
+$("loginId").value = C.loginId;
+$("loginSub").textContent = `${C.groom.name} ♥ ${C.bride.name}`;
+
+(function(){let h="";[[4,78,34],[16,70,26],[30,84,30],[46,74,22],[62,82,28],[78,72,24],[90,80,32],[8,90,36],[52,92,34],[72,90,30],[38,66,16],[84,64,16],[22,62,14],[60,64,14]].forEach(([x,y,z])=>h+=`<div class="daisy" style="left:${x}%;top:${y}%;width:${z}px;height:${z}px"></div>`);document.getElementById("daisies").innerHTML=h;})();
+document.addEventListener("click",e=>{const d=e.target.closest(".dock>div");if(!d)return;const map={"청첩장":0,"사진첩":3,"오시는길":4,"참석여부":6,"축하쪽지":8};const w=document.querySelectorAll("#main>.win");const t=w[map[d.textContent.replace(/^.{1,2}/,"").trim()]];if(t)t.scrollIntoView({behavior:"smooth"});});
+function login(){
+  if (C.sound){ $("sfx").src = C.sound; $("sfx").play().catch(()=>{}); }
+  if (C.bgm){ $("bgm").src = C.bgm; $("bgmBtn").classList.remove("hidden"); toggleBgm(true); }
+  $("loginWin").classList.add("hidden");
+  $("main").classList.remove("hidden");
+  render();
+  setTimeout(()=>{ $("toastText").textContent = C.toast; $("toast").classList.add("show");
+    setTimeout(()=>$("toast").classList.remove("show"), 3500); }, 600);
+}
+
+function render(){
+  // 버디리스트
+  $("meName").textContent = `${C.groom.name} ♥ ${C.bride.name}`;
+  $("meStatus").textContent = C.coupleStatus;
+  if (C.coupleAvatar){ $("coupleAvatar").style.backgroundImage = `url(${C.coupleAvatar})`; $("coupleAvatar").textContent = ""; }
+  $("buddyList").innerHTML = ["groom","bride"].map(k=>{ const p=C[k];
+    return `<div class="bud" onclick="location.href='tel:${p.phone}'"><span class="face on">😊</span>${p.nick} <em>(${p.status})</em><span class="hp">🏠</span></div>
+      <div class="par">${p.father} · ${p.mother}의 ${p.order} <b>${p.name}</b> 📞</div>`; }).join("");
+
+  // 대화창
+  $("chatTitle").textContent = `${C.groom.nick}, ${C.bride.nick} 님과의 대화`;
+  const names = { g: C.groom.nick, b: C.bride.nick };
+  $("chat").innerHTML = C.chat.map(l => l.who==="s"
+    ? `<div class="line sys">${l.text}</div>`
+    : `<div class="line"><b class="${l.who}">${names[l.who]}</b> 님의 말 :<br>&nbsp;${l.text}</div>`).join("");
+  [...document.querySelectorAll(".line")].forEach((el,i)=>setTimeout(()=>el.classList.add("show"), 400 + i*650));
+
+  // 일시 & 달력
+  const h = D.getHours(), m = D.getMinutes();
+  $("dateText").textContent = `${D.getFullYear()}년 ${D.getMonth()+1}월 ${D.getDate()}일 ${days[D.getDay()]}요일 ${h<12?"오전":"오후"} ${h%12||12}시${m?" "+m+"분":""}`;
+  $("hallName").textContent = C.place.name;
+  const first = new Date(D.getFullYear(), D.getMonth(), 1).getDay();
+  const last = new Date(D.getFullYear(), D.getMonth()+1, 0).getDate();
+  let html = "<tr>"+days.map(d=>`<th>${d}</th>`).join("")+"</tr><tr>";
+  for (let i=0;i<first;i++) html += "<td></td>";
+  for (let d=1; d<=last; d++){ html += `<td class="${d===D.getDate()?"on":""}">${d}</td>`; if ((first+d)%7===0) html += "</tr><tr>"; }
+  $("cal").innerHTML = html + "</tr>";
+  const today = new Date(); today.setHours(0,0,0,0);
+  const target = new Date(D); target.setHours(0,0,0,0);
+  const diff = Math.round((target - today)/864e5);
+  $("ddayMini").textContent = diff>0?`D-${diff}`:"D-DAY";
+  $("dday").textContent = diff>0 ? `${C.groom.name} ♥ ${C.bride.name} 결혼식까지 D-${diff}` : diff===0 ? "오늘 결혼합니다! 🎉" : `결혼한 지 ${-diff}일 ♥`;
+
+  // 갤러리
+  renderGallery();
+
+  // 오시는 길
+  $("placeName").textContent = C.place.name;
+  $("placeAddr").textContent = C.place.address;
+  $("mapBtns").innerHTML = `
+    <a class="xpbtn" style="margin:0" href="${C.place.naverMap}" target="_blank">네이버지도</a>
+    <a class="xpbtn" style="margin:0" href="${C.place.kakaoMap}" target="_blank">카카오맵</a>
+    <a class="xpbtn" style="margin:0" href="${C.place.tmap}" target="_blank">티맵</a>
+    <button class="xpbtn" style="margin:0" onclick="copy('${C.place.address}')">주소복사</button>`;
+  $("transport").innerHTML = C.place.transport.map(t=>`<div><b>${t[0]}</b> ${t[1]}</div>`).join("");
+
+  // 계좌
+  const accHtml = (title, list) => `<h3>${title}</h3>` + list.map(a=>
+    `<div class="acc"><div><b>${a[0]}</b><br>${a[1]}</div><button onclick="copy('${a[1]}')">복사</button></div>`).join("");
+  $("accounts").innerHTML = accHtml("🤵 신랑측", C.accounts.groom) + "<br>" + accHtml("👰 신부측", C.accounts.bride);
+
+  $("footer").textContent = C.footer;
+  loadNotes();
+}
+
+
+/* ===== 아바타 & 옷장 ===== */
+const CLOSET = {
+  skin:  { label:"피부", items:[["밝은","#ffe0c7"],["보통","#f6cfa8"],["구릿빛","#d9a476"]] },
+  hair:  { label:"헤어", items:[["짧은머리","short"],["단발","bob"],["긴생머리","long"],["양갈래","twin"],["까까머리","buzz"]] },
+  hairC: { label:"머리색", items:[["흑발","#2a2220"],["갈색","#7a4a26"],["노랑","#e8b93a"],["핑크","#f28ab8"]] },
+  top:   { label:"상의", items:[["흰 티","tee|#fbf7e6"],["초록 티","tee|#7cc22a"],["턱시도","tux|#222"],["드레스","dress|#ffffff"],["핑크 드레스","dress|#ffb8d2"],["후드","hood|#6aa9e8"]] },
+  bottom:{ label:"하의", items:[["노랑 반바지","shorts|#f5d63a"],["청바지","pants|#4a73b5"],["검정 바지","pants|#2b2b2b"],["체크 치마","skirt|#e0455a"],["없음(드레스)","none|"]] },
+  shoes: { label:"신발", items:[["운동화","#ffffff"],["구두","#2a2a2a"],["빨강 구두","#d8323a"],["초록 운동화","#7cc22a"]] },
+  acc:   { label:"소품", items:[["없음","none"],["안경","glasses"],["리본","ribbon"],["베일","veil"],["꽃다발","bouquet"],["왕관","crown"]] },
+  face:  { label:"표정", items:[["웃음","smile"],["무표정","plain"],["윙크","wink"],["감동","cry"]] }
+};
+const DEFAULT_LOOK = { skin:0, hair:0, hairC:0, top:0, bottom:0, shoes:0, acc:0, face:0 };
+let look = {...DEFAULT_LOOK}, curTab = "top";
+
+function avatarSVG(o, w){
+  const g = k => CLOSET[k].items[o[k]||0][1];
+  const sk=g("skin"), hc=g("hairC"), [tt,tc]=g("top").split("|"), [bt,bc]=g("bottom").split("|"), sh=g("shoes"), hr=g("hair"), ac=g("acc"), fc=g("face");
+  let v='';
+  // 뒷머리
+  if(hr==="long") v+=`<path d="M28 30 Q26 80 34 92 L86 92 Q94 80 92 30Z" fill="${hc}"/>`;
+  if(hr==="twin") v+=`<circle cx="24" cy="50" r="10" fill="${hc}"/><circle cx="96" cy="50" r="10" fill="${hc}"/>`;
+  if(ac==="veil") v+=`<path d="M30 22 Q60 6 90 22 L104 150 Q60 160 16 150Z" fill="#fff" opacity=".7" stroke="#ddd"/>`;
+  // 다리
+  if(tt!=="dress"||true) v+=`<rect x="47" y="138" width="10" height="44" fill="${sk}"/><rect x="63" y="138" width="10" height="44" fill="${sk}"/>`;
+  if(bt==="pants") v+=`<path d="M44 118 H76 L75 182 H63 L60 138 L57 182 H45Z" fill="${bc}"/>`;
+  if(bt==="shorts") v+=`<path d="M44 118 H76 L77 146 H62 L60 136 L58 146 H43Z" fill="${bc}" stroke="#0002"/>`;
+  if(bt==="skirt") v+=`<path d="M44 116 H76 L84 150 H36Z" fill="${bc}"/><path d="M44 126 H78 M40 138 H81" stroke="#fff6" stroke-width="3"/>`;
+  // 신발
+  v+=`<path d="M42 180 h16 v8 h-20 q0-8 4-8Z M62 180 h16 q4 0 4 8 h-20Z" fill="${sh}" stroke="#555" stroke-width="1"/>`;
+  // 팔
+  v+=`<rect x="30" y="70" width="9" height="52" rx="4" fill="${sk}"/><rect x="81" y="70" width="9" height="52" rx="4" fill="${sk}"/>`;
+  // 상의
+  if(tt==="tee") v+=`<path d="M42 64 H78 L92 76 L86 86 L78 80 V120 H42 V80 L34 86 L28 76Z" fill="${tc}" stroke="#0002"/><path d="M52 64 Q60 72 68 64" fill="none" stroke="#0003"/>`;
+  if(tt==="hood") v+=`<path d="M42 64 H78 L90 78 L90 110 L80 110 V120 H40 V110 L30 110 L30 78Z" fill="${tc}"/><path d="M48 62 Q60 76 72 62" fill="none" stroke="#fff" stroke-width="3"/>`;
+  if(tt==="tux") v+=`<path d="M42 64 H78 L90 76 V118 H80 V124 H40 V118 H30 V76Z" fill="${tc}"/><path d="M52 64 L60 100 L68 64Z" fill="#fff"/><path d="M55 68 L60 64 L65 68 L60 72Z" fill="#d8323a"/><circle cx="60" cy="84" r="1.5"/><circle cx="60" cy="92" r="1.5"/>`;
+  if(tt==="dress") v+=`<path d="M46 64 H74 L78 104 L96 176 H24 L42 104Z" fill="${tc}" stroke="#0002"/><path d="M42 104 H78" stroke="#f3c5d6" stroke-width="3"/><path d="M38 64 L46 64 L44 76 M82 64 L74 64 L76 76" stroke="${tc}" stroke-width="5"/>`;
+  // 머리
+  v+=`<rect x="54" y="54" width="12" height="12" fill="${sk}"/><ellipse cx="60" cy="36" rx="24" ry="25" fill="${sk}"/>`;
+  // 앞머리
+  const hp={short:`<path d="M35 34 Q36 8 60 9 Q86 8 85 34 Q76 20 60 22 Q44 20 35 34Z" fill="${hc}"/>`,
+    bob:`<path d="M33 50 Q30 8 60 9 Q90 8 87 50 L82 50 Q82 26 60 24 Q38 26 38 50Z" fill="${hc}"/>`,
+    long:`<path d="M35 36 Q34 8 60 9 Q86 8 85 36 Q70 18 60 26 Q48 18 35 36Z" fill="${hc}"/>`,
+    twin:`<path d="M36 32 Q36 9 60 10 Q84 9 84 32 Q60 18 36 32Z" fill="${hc}"/>`,
+    buzz:`<path d="M37 28 Q40 11 60 11 Q80 11 83 28 Q60 20 37 28Z" fill="${hc}" opacity=".75"/>`};
+  v+=hp[hr]||"";
+  // 얼굴
+  const fe={smile:`<path d="M49 36 q3-4 6 0 M65 36 q3-4 6 0" stroke="#333" stroke-width="2" fill="none"/><path d="M52 46 q8 8 16 0" stroke="#c0392b" stroke-width="2" fill="#fff"/>`,
+    plain:`<circle cx="52" cy="36" r="2.2"/><circle cx="68" cy="36" r="2.2"/><path d="M54 48 h12" stroke="#333" stroke-width="2"/>`,
+    wink:`<circle cx="52" cy="36" r="2.4"/><path d="M65 36 q3-4 6 0" stroke="#333" stroke-width="2" fill="none"/><path d="M53 46 q7 6 14 0" stroke="#333" stroke-width="2" fill="none"/>`,
+    cry:`<path d="M48 34 q4 3 8 0 M64 34 q4 3 8 0" stroke="#333" stroke-width="2" fill="none"/><path d="M50 38 v8 M70 38 v8" stroke="#6ac0f0" stroke-width="3"/><path d="M54 49 q6-4 12 0" stroke="#333" stroke-width="2" fill="none"/>`};
+  v+=fe[fc]+`<ellipse cx="46" cy="44" rx="4" ry="2.5" fill="#ff9aa2" opacity=".6"/><ellipse cx="74" cy="44" rx="4" ry="2.5" fill="#ff9aa2" opacity=".6"/>`;
+  // 소품
+  if(ac==="glasses") v+=`<g fill="none" stroke="#333" stroke-width="1.8"><circle cx="52" cy="36" r="6"/><circle cx="68" cy="36" r="6"/><path d="M58 36 h4"/></g>`;
+  if(ac==="ribbon") v+=`<path d="M70 12 l12 -8 v16Z M70 12 l-10 -8 v16Z" fill="#ff5c93"/><circle cx="70" cy="12" r="3" fill="#e0457b"/>`;
+  if(ac==="crown") v+=`<path d="M44 14 L48 2 L54 10 L60 0 L66 10 L72 2 L76 14Z" fill="#ffd23a" stroke="#c9960a"/>`;
+  if(ac==="veil") v+=`<path d="M40 16 Q60 4 80 16" stroke="#fff" stroke-width="4" fill="none"/><circle cx="60" cy="8" r="3" fill="#ffd9ec"/>`;
+  if(ac==="bouquet") v+=`<path d="M84 118 l4 -14 l6 14Z" fill="#6aa82a"/><circle cx="86" cy="104" r="5" fill="#ff8fb3"/><circle cx="93" cy="102" r="5" fill="#fff"/><circle cx="89" cy="96" r="5" fill="#ffd23a"/>`;
+  return `<svg viewBox="0 0 120 192" width="${w}" style="display:block;margin:auto">${v}</svg>`;
+}
+function renderAvatar(){ $("avatarStage").innerHTML = avatarSVG(look, 120); }
+function renderCloset(){
+  $("ctabs").innerHTML = Object.entries(CLOSET).map(([k,c])=>`<span class="${k===curTab?'on':''}" onclick="curTab='${k}';renderCloset()">${c.label}</span>`).join("");
+  $("citems").innerHTML = CLOSET[curTab].items.map((it,i)=>{
+    const prev = {...look, [curTab]: i};
+    return `<div class="citem ${look[curTab]===i?'on':''}" onclick="look.${curTab}=${i};renderAvatar();renderCloset()">${avatarSVG(prev,44)}<small>${it[0]}</small></div>`;}).join("");
+}
+function randomOutfit(){ for(const k in CLOSET) look[k]=Math.floor(Math.random()*CLOSET[k].items.length); renderAvatar(); renderCloset(); }
+function resetOutfit(){ look={...DEFAULT_LOOK}; renderAvatar(); renderCloset(); }
+function resetForm(){ ["gName","gNick","gRegion","gMsg"].forEach(i=>$(i).value=""); $("closet").classList.add("hidden"); }
+function gunghap(){ const n=$("gName").value.trim()||"하객"; const r=80+Math.floor(Math.random()*21);
+  alert(`💘 궁합운세 💘\n${n}님과 ${C.groom.name}♥${C.bride.name} 부부의 우정 궁합은 ${r}점!\n결혼식에 오시면 +100점 🎉`); }
+
+const esc = s => s.replace(/[<>&"]/g, c=>({"<":"&lt;",">":"&gt;","&":"&amp;",'"':"&quot;"}[c]));
+function drawNotes(n){
+  $("noteCnt").textContent = `(${n.length})`;
+  $("notes").innerHTML = n.length ? n.map(x=>{ let lk=x.look; if(typeof lk==="string"){try{lk=JSON.parse(lk)}catch(e){lk={}}}
+    return `<div class="ncard"><div class="nav">${avatarSVG(lk||{},62)}</div>
+      <div class="nbody"><div class="nhead"><b>${esc(String(x.nick||x.name))}</b> <span>(${esc(String(x.name))})</span></div>
+      <div class="nmeta">${esc(String(x.side))}${x.region?" · "+esc(String(x.region)):""} · ${esc(String(x.time))}</div>
+      <div class="nmsg">${esc(String(x.msg)).replace(/\n/g,"<br>")}</div></div></div>`;}).join("")
+    : `<div class="hint">아직 도착한 쪽지가 없어요. 첫 번째 버디가 되어주세요! 👟</div>`;
+}
+function loadNotes(){
+  if(!C.rsvpUrl) return drawNotes(JSON.parse(localStorage.getItem("bb_notes2")||"[]"));
+  $("notes").innerHTML = `<div class="hint">쪽지를 불러오는 중...</div>`;
+  fetch(C.rsvpUrl+"?type=notes").then(r=>r.json()).then(drawNotes)
+    .catch(()=>drawNotes(JSON.parse(localStorage.getItem("bb_notes2")||"[]")));
+}
+function sendNote(){
+  const name=$("gName").value.trim(), msg=$("gMsg").value.trim();
+  if(!name||!msg) return alert("아이디(이름)와 축하 메시지를 입력해주세요!");
+  const note={ name, nick:$("gNick").value.trim(), side:$("gSide").value, region:$("gRegion").value.trim(),
+    msg, look:{...look}, time:new Date().toLocaleDateString("ko-KR") };
+  const list = JSON.parse(localStorage.getItem("bb_notes2")||"[]"); list.unshift(note);
+  localStorage.setItem("bb_notes2", JSON.stringify(list));
+  const done=()=>{ resetForm(); loadNotes();
+    $("toastText").textContent = `${name}님이 버디로 추가되었습니다! ♥`; $("toast").classList.add("show");
+    setTimeout(()=>$("toast").classList.remove("show"),3000); };
+  if(!C.rsvpUrl) return done();
+  fetch(C.rsvpUrl,{method:"POST",mode:"no-cors",body:JSON.stringify({type:"note",...note,look:JSON.stringify(note.look)})})
+    .then(()=>setTimeout(done,800)).catch(()=>{alert("전송 실패 — 잠시 후 다시 시도해주세요.");});
+}
+renderAvatar(); renderCloset();
+
+/* 사진첩 */
+const G = C.gallery; let PH = [], shown = 0, cur = 0;
+function buildPhotos(){
+  if (C.photos.length) return C.photos;
+  return Array.from({length:G.count}, (_,i)=> G.demo ? `https://picsum.photos/seed/wed${i+1}/800`
+    : `${G.folder}${String(i+1).padStart(2,"0")}.${G.ext}`);
+}
+function renderGallery(){ PH = buildPhotos(); shown = 0; $("gallery").innerHTML = ""; showMore(G.firstShow); }
+function showMore(n){
+  n = n || 12; const end = Math.min(shown + n, PH.length);
+  for (let i=shown;i<end;i++) $("gallery").insertAdjacentHTML("beforeend", `<img src="${PH[i]}" loading="lazy" onclick="view(${i})">`);
+  shown = end; $("moreBtn").style.display = shown >= PH.length ? "none" : "block";
+  $("moreBtn").textContent = `사진 더보기 ▼ (${shown}/${PH.length})`;
+}
+function view(i){ cur = i; $("viewerImg").src = PH[i]; $("vcnt").textContent = `${i+1} / ${PH.length}`; $("viewer").style.display = "flex"; }
+function step(d){ event.stopPropagation(); view((cur + d + PH.length) % PH.length); }
+function closeView(e){ if (e.target.id==="viewer" || e.target.id==="viewerImg") $("viewer").style.display="none"; }
+let sx=0; $("viewer").addEventListener("touchstart",e=>sx=e.touches[0].clientX);
+$("viewer").addEventListener("touchend",e=>{ const dx=e.changedTouches[0].clientX-sx; if(Math.abs(dx)>50){ view((cur+(dx<0?1:-1)+PH.length)%PH.length); }});
+
+/* 배경음악 */
+function toggleBgm(forcePlay){
+  const a = $("bgm");
+  if (forcePlay===true || a.paused){ a.play().then(()=>{$("bgmBtn").classList.add("on");$("bgmBtn").textContent="🎵";}).catch(()=>{}); }
+  else { a.pause(); $("bgmBtn").classList.remove("on"); $("bgmBtn").textContent="🔇"; }
+}
+
+/* 참석 여부 */
+function sendRsvp(){
+  const v = n => document.querySelector(`input[name=${n}]:checked`).value;
+  const data = { side:v("side"), attend:v("attend"), name:$("rName").value.trim(), phone:$("rPhone").value.trim(),
+    count:$("rCount").value, meal:$("rMeal").value, memo:$("rMemo").value.trim(), time:new Date().toLocaleString("ko-KR") };
+  if (!data.name) return alert("성함을 입력해주세요!");
+  if (!C.rsvpUrl){ console.log("RSVP(테스트)", data); return alert("[테스트 모드] 전달 완료!\nrsvpUrl을 설정하면 구글 시트로 저장됩니다."); }
+  $("rBtn").disabled = true; $("rBtn").textContent = "전송 중...";
+  fetch(C.rsvpUrl, { method:"POST", mode:"no-cors", body: JSON.stringify({type:"rsvp", ...data}) })
+    .then(()=>{ alert(`${data.name}님, 소중한 회신 감사합니다 ♥`); $("rName").value=$("rPhone").value=$("rMemo").value=""; })
+    .catch(()=>alert("전송에 실패했어요. 잠시 후 다시 시도해주세요."))
+    .finally(()=>{ $("rBtn").disabled=false; $("rBtn").textContent="참석 여부 전달하기"; });
+}
+
+/* 카카오톡 공유 */
+function shareKakao(){
+  const S = C.share, url = S.url || location.href;
+  if (!window.Kakao || !S.kakaoKey) return alert("카카오 JavaScript 키(share.kakaoKey)를 설정해주세요.");
+  if (!Kakao.isInitialized()) Kakao.init(S.kakaoKey);
+  Kakao.Share.sendDefault({
+    objectType: "feed",
+    content: { title: S.title, description: S.desc, imageUrl: S.image, link: { mobileWebUrl: url, webUrl: url } },
+    buttons: [{ title: "청첩장 보기", link: { mobileWebUrl: url, webUrl: url } }]
+  });
+}
+function copy(t){ navigator.clipboard?.writeText(t).then(()=>alert("복사되었습니다: " + t)).catch(()=>prompt("복사하세요", t)); }
+
+</script>
+</body>
+</html>
